@@ -1,23 +1,36 @@
 {% set version = "16.0.3" %}
 {% set major_ver = version.split(".")[0] %}
+{% set build_number = 2 %}
+
+{% set rocm_version = "5.5.0" %}
 
 package:
   name: llvm-package
   version: {{ version }}
 
+# AMD's llvm is a soft fork (they regularly pull updates from upstream) which
+# is required for HIP. We don't want to clobber the canonical llvm or duplicate
+# all of the build logic in the feedstock. However, the changes between AMD and
+# upstream are significant enough that it's better to download the fork source
+# instead of generating a patch between the two.
+#
+# Figure out which canonical stable release is closest to the AMD rocm release
+# by looking in llvm/CMakeLists.txt to see the llvm version. AMD git tags are
+# rocm-x.x.x and llvm git tags are llvmorg-x.x.x
 source:
-  url: https://github.com/llvm/llvm-project/releases/download/llvmorg-{{ version.replace(".rc", "-rc") }}/llvm-project-{{ version.replace(".rc", "rc") }}.src.tar.xz
-  sha256: 3b12e35332e10cf650578ae18247b91b04926d5427e1a6ae9a51d170a47cfbb2
+  url: https://github.com/llvm/llvm-project/releases/download/llvmorg-{{ version.replace(".rc", "-rc") }}/llvm-project-{{ version.replace(".rc", "rc") }}.src.tar.xz  # [fork == 'llvm']
+  sha256: 3b12e35332e10cf650578ae18247b91b04926d5427e1a6ae9a51d170a47cfbb2  # [fork == 'llvm']
+  url: https://github.com/RadeonOpenCompute/llvm-project/archive/refs/tags/rocm-{{ rocm_version }}.tar.gz  # [fork == 'rocm']
+  sha256: 5dc6c99f612b69ff73145bee17524e3712990100e16445b71634106acf7927cf  # [fork == 'rocm']
   patches:
     # - patches/intel-D47188-svml-VF.patch    # Fixes vectorizer and extends SVML support
     # - patches/expect-fastmath-entrypoints-in-add-TLI-mappings.ll.patch # adjusts test added in 10.0.0 for intel-D47188-svml-VF.patch effects
-    # - patches/amd-roc-2.7.0.diff
     - patches/0001-pass-through-QEMU_LD_PREFIX-SDKROOT.patch
-    - patches/0002-Always-copy-on-windows.patch
-    - patches/0003-restore-macos-10.9-support.patch
+    - patches/0002-Always-copy-on-windows.patch  # [win]
+    - patches/0003-restore-macos-10.9-support.patch  # [osx]
 
 build:
-  number: 1
+  number: {{ build_number }}
   merge_build_host: false
 
 requirements:
@@ -42,6 +55,9 @@ outputs:
     script: install_llvm.bat  # [win]
     build:
       activate_in_script: true
+      track_features:
+        - rocm          # [fork=="rocm"]
+      string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
     requirements:
       build:
         - {{ compiler('cxx') }}
@@ -77,6 +93,9 @@ outputs:
   - name: libllvm{{ major_ver }}
     script: install_llvm.sh  # [not win]
     build:
+      track_features:
+        - rocm          # [fork=="rocm"]
+      string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       activate_in_script: true
       run_exports:   # [not win]
         - {{ pin_subpackage("libllvm" + major_ver, max_pin="x.x") }}  # [not win]
@@ -102,6 +121,9 @@ outputs:
   # for run_exports
   - name: llvm
     build:
+      track_features:
+        - rocm          # [fork=="rocm"]
+      string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       run_exports:   # [not win]
         - {{ pin_subpackage("libllvm" + major_ver, max_pin="x.x") }}  # [not win]
     requirements:
@@ -124,6 +146,9 @@ outputs:
     script: install_llvm.sh  # [not win]
     script: install_llvm.bat  # [win]
     build:
+      track_features:
+        - rocm          # [fork=="rocm"]
+      string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       activate_in_script: true
     requirements:
       build:
@@ -150,6 +175,9 @@ outputs:
 
   - name: lit
     build:
+      track_features:
+        - rocm          # [fork=="rocm"]
+      string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       noarch: python
       script: python -m pip install llvm/utils/lit --no-deps -vv
       activate_in_script: true

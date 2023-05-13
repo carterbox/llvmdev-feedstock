@@ -8,6 +8,8 @@ cxx_compiler:
 - clang_bootstrap
 cxx_compiler_version:
 - '15'
+fork:
+- llvm
 libxml2:
 - '2.10'
 macos_machine:
