@@ -38,3 +38,6 @@ REM if %ERRORLEVEL% neq 0 exit 1
 
 cd ..\llvm\test
 python ..\..\build\bin\llvm-lit.py -vv Transforms ExecutionEngine Analysis CodeGen/X86
+
+cmake --install .
+if %ERRORLEVEL% neq 0 exit 1
