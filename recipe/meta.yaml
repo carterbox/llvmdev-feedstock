@@ -4,6 +4,10 @@
 
 {% set rocm_version = "5.5.0" %}
 
+{% if fork == "llvm" %}
+  {% set build_number = build_number + 100 %}
+{% endif %}
+
 package:
   name: llvm-package
   version: {{ version }}
