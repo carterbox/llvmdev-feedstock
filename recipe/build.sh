@@ -48,6 +48,7 @@ cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
       -DLLVM_LINK_LLVM_DYLIB=yes \
       -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly \
       -DLLVM_VERSION_SUFFIX:STRING="" \
+      -DLLVM_INSTALL_TOOLCHAIN_ONLY:BOOL=ON \
       ${CMAKE_ARGS} \
       -GNinja \
       ../llvm

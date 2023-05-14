@@ -12,6 +12,8 @@ package:
   name: llvm-package
   version: {{ version }}
 
+# https://llvm.org/docs/BuildingADistribution.html
+
 # AMD's llvm is a soft fork (they regularly pull updates from upstream) which
 # is required for HIP. We don't want to clobber the canonical llvm or duplicate
 # all of the build logic in the feedstock. However, the changes between AMD and
