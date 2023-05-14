@@ -82,7 +82,7 @@ outputs:
     build:
       activate_in_script: true
       track_features:
-        - rocm          # [fork=="rocm"]
+        - rocm_W8dSr8cWmz          # [fork=="rocm"]
       string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
     requirements:
       build:
@@ -127,7 +127,7 @@ outputs:
       # No version-labeled libs on Windows; libraries are not co-installable
     build:
       track_features:
-        - rocm          # [fork=="rocm"]
+        - rocm_W8dSr8cWmz          # [fork=="rocm"]
       string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       activate_in_script: true
       run_exports:   # [not win]
@@ -159,7 +159,7 @@ outputs:
   - name: llvm
     build:
       track_features:
-        - rocm          # [fork=="rocm"]
+        - rocm_W8dSr8cWmz          # [fork=="rocm"]
       string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       run_exports:   # [not win]
         - {{ pin_subpackage("libllvm" + major_ver, max_pin="x.x") }}  # [not win]
@@ -207,7 +207,7 @@ outputs:
       - Library/share/opt-viewer  # [win]
     build:
       track_features:
-        - rocm          # [fork=="rocm"]
+        - rocm_W8dSr8cWmz          # [fork=="rocm"]
       string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       activate_in_script: true
     requirements:
@@ -238,7 +238,7 @@ outputs:
   - name: lit
     build:
       track_features:
-        - rocm          # [fork=="rocm"]
+        - rocm_W8dSr8cWmz          # [fork=="rocm"]
       string: {{ fork }}_h{{ PKG_HASH }}_{{ build_number }}
       noarch: python
       script: python -m pip install llvm/utils/lit --no-deps -vv
