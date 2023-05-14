@@ -1,4 +1,4 @@
-{% set version = "16.0.3" %}
+{% set version = "16.0.0" %}
 {% set major_ver = version.split(".")[0] %}
 {% set build_number = 2 %}
 
@@ -16,7 +16,8 @@ package:
 #
 # Figure out which canonical stable release is closest to the AMD rocm release
 # by looking in llvm/CMakeLists.txt to see the llvm version. AMD git tags are
-# rocm-x.x.x and llvm git tags are llvmorg-x.x.x
+# rocm-x.x.x and llvm git tags are llvmorg-x.x.x. AMD may not get patch release
+# updates.
 source:
   url: https://github.com/llvm/llvm-project/releases/download/llvmorg-{{ version.replace(".rc", "-rc") }}/llvm-project-{{ version.replace(".rc", "rc") }}.src.tar.xz  # [fork == 'llvm']
   sha256: 3b12e35332e10cf650578ae18247b91b04926d5427e1a6ae9a51d170a47cfbb2  # [fork == 'llvm']
@@ -51,8 +52,33 @@ requirements:
 outputs:
   # Contains everything
   - name: llvmdev
-    script: install_llvm.sh  # [not win]
-    script: install_llvm.bat  # [win]
+#FIXME: Ship static libs separately or not at all if they are redundant
+    files:
+      - bin/llvm-config                  # [unix]
+      - include/llvm                     # [unix]
+      - include/llvm-c                   # [unix]
+      - lib/cmake/llvm                   # [unix]
+      - lib/libLLVM-{{ version }}.dylib  # [osx]
+      - lib/libLLVM-{{ version }}.so     # [linux]
+      - lib/libLLVM.dylib                # [osx]
+      - lib/libLLVM.so                   # [linux]
+      - lib/libLLVM*.a                   # [unix]
+      - lib/libLTO.dylib                 # [osx]
+      - lib/libLTO.so                    # [linux]
+      - lib/libRemarks.dylib             # [osx]
+      - lib/libRemarks.so                # [linux]
+      - libexec/llvm                     # [unix]
+      - Library/bin/llvm-config.exe              # [win]
+      - Library/include/llvm                     # [win]
+      - Library/include/llvm-c                   # [win]
+      - Library/lib/cmake/llvm                   # [win]
+      # No shared library LLVM.dll on Windows; only static libs for each target
+      - Library/lib/LLVM*.lib                    # [win]
+      - Library/lib/LTO.lib                      # [win]
+      - Library/lib/Remarks.lib                  # [win]
+      - Library/bin/LTO.dll                      # [win]
+      - Library/bin/Remarks.dll                  # [win]
+      - Library/libexec/llvm                     # [win]
     build:
       activate_in_script: true
       track_features:
@@ -91,7 +117,14 @@ outputs:
   # Contains the shared libraries. To make different LLVM libraries co-installable
   # soversion is appended to the package name.
   - name: libllvm{{ major_ver }}
-    script: install_llvm.sh  # [not win]
+    files:
+      - lib/libLLVM-{{ major_ver }}.so           # [linux]
+      - lib/libLTO.so.{{ major_ver }}            # [linux]
+      - lib/libRemarks.so.{{ major_ver }}        # [linux]
+      - lib/libLLVM-{{ major_ver }}.dylib        # [osx]
+      - lib/libLTO.{{ major_ver }}.dylib         # [osx]
+      - lib/libRemarks.{{ major_ver }}.dylib     # [osx]
+      # No version-labeled libs on Windows; libraries are not co-installable
     build:
       track_features:
         - rocm          # [fork=="rocm"]
@@ -115,7 +148,11 @@ outputs:
         - libcxx >={{ cxx_compiler_version }}  # [osx]
     test:
       commands:
-        - test -f $PREFIX/lib/libLLVM-{{ major_ver }}${SHLIB_EXT}     # [not win]
+        - test -f $PREFIX/lib/libLLVM-{{ major_ver }}${SHLIB_EXT}     # [unix]
+        - test -f $PREFIX/lib/libLTO${SHLIB_EXT}.{{ major_ver }}      # [linux]
+        - test -f $PREFIX/lib/libRemarks${SHLIB_EXT}.{{ major_ver }}  # [linux]
+        - test -f $PREFIX/lib/libLTO.{{ major_ver }}${SHLIB_EXT}      # [osx]
+        - test -f $PREFIX/lib/libRemarks.{{ major_ver }}${SHLIB_EXT}  # [osx]
 
   # This is a meta package so that people can use the latest libllvm and also
   # for run_exports
@@ -143,8 +180,31 @@ outputs:
 
   # Contains LLVM tools
   - name: llvm-tools
-    script: install_llvm.sh  # [not win]
-    script: install_llvm.bat  # [win]
+    files:
+      - bin/bugpoint*  # [unix]
+      - bin/dsymutil*  # [unix]
+      - bin/llc*  # [unix]
+      - bin/lli*  # [unix]
+      - bin/llvm-[!c]*  # [unix]
+      - bin/llvm-cov*  # [unix]
+      - bin/llvm-c[afvx-]*  # [unix]
+      - bin/opt*  # [unix]
+      - bin/sancov*  # [unix]
+      - bin/sanstats*  # [unix]
+      - bin/verify-uselistorder*  # [unix]
+      - share/opt-viewer  # [unix]
+      - Library/bin/bugpoint.exe  # [win]
+      - Library/bin/dsymutil.exe  # [win]
+      - Library/bin/llc.exe  # [win]
+      - Library/bin/lli.exe  # [win]
+      - Library/bin/llvm-[!c]*.exe  # [win]
+      - Library/bin/llvm-cov.exe  # [win]
+      - Library/bin/llvm-c[afvx-]*.exe  # [win]
+      - Library/bin/opt.exe  # [win]
+      - Library/bin/sancov.exe  # [win]
+      - Library/bin/sanstats.exe  # [win]
+      - Library/bin/verify-uselistorder.exe  # [win]
+      - Library/share/opt-viewer  # [win]
     build:
       track_features:
         - rocm          # [fork=="rocm"]
@@ -172,6 +232,8 @@ outputs:
         - $PREFIX/bin/llc -version                               # [not win]
         - if not exist "%LIBRARY_BIN%"\\llc.exe exit 1           # [win]
         - llc -version                                           # [win]
+#FIXME: Why is bin/llvm-config excluded here, and included in llvm-dev?
+        - test ! -f $PREFIX/bin/llvm-config  # [unix]
 
   - name: lit
     build:

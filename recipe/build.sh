@@ -47,6 +47,7 @@ cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
       -DLLVM_BUILD_LLVM_DYLIB=yes \
       -DLLVM_LINK_LLVM_DYLIB=yes \
       -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=WebAssembly \
+      -DLLVM_VERSION_SUFFIX:STRING="" \
       ${CMAKE_ARGS} \
       -GNinja \
       ../llvm
@@ -71,3 +72,5 @@ if [["$CONDA_BUILD_CROSS_COMPILATION" != "1"]] && [["$fork" == "llvm"]]; then
   cd ../llvm/test
   python ../../build/bin/llvm-lit -vv Transforms ExecutionEngine Analysis CodeGen/X86
 fi
+
+cmake --install .
